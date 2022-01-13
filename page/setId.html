@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../css/csshake.css">
+    <style type="text/css">
+        input {
+            outline-style: none;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            padding: 13px 14px;
+            height: 12px;
+            width: 130px;
+            font-size: 14px;
+            font-weight: bold;
+            font-family: "Microsoft soft";
+            display: inline-block;
+        }
+
+        .focus {
+            border-color: #66afe9;
+            outline: 0;
+            -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6);
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6)
+        }
+
+        .warn {
+            border-color: #e96666;
+            outline: 0;
+            -webkit-box-shadow: inset 0 1px 1px rgba(145, 96, 96, 0.07), 0 0 8px rgb(214, 43, 117);
+            box-shadow: inset 0 1px 1px rgba(200, 157, 157, 0.07), 0 0 8px rgb(233, 102, 189)
+        }
+    </style>
+</head>
+<body>
+<div class="bag">
+    <input type="text" class="focus" name="id_input" autofocus="autofocus" placeholder="请输入id，回车结束"/>
+</div>
+<script type="text/javascript" src="../js/jquery-3.4.1.min.js"></script>
+<script type="text/javascript" src="../js/ext/layer/layer.js"></script>
+<script type="text/javascript">
+    $(() => {
+        let d = $('input[name="id_input"]');
+        // d.on('mouseover', e => {
+        //     d.removeClass('warn');
+        //     d.addClass('focus');
+        // })
+        $('body').on('keydown', e => {
+            if (e.key === 'Escape') {
+                parent.makeSth();
+            }
+
+            if (e.key === 'Enter') {
+                let v = d.val();
+                if (v) {
+                    if (parent.$('#' + v) && parent.$('#' + v).length > 0) {
+                        d.attr('placeholder', v + ' 已存在，请更换');
+                        d.val('');
+                        d.removeClass('focus');
+                        d.addClass('warn');
+                    } else
+                        parent.makeSth(v);
+                } else {
+                    d.removeClass('focus');
+                    d.addClass('warn');
+                    d.attr('placeholder', 'id不可为空')
+                    // setTimeout(() => {
+                    //     d.addClass('shake')
+                    // }, 800);
+                }
+                return false;
+            }
+        })
+    });
+</script>
+</body>
+</html>
