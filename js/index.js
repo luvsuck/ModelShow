@@ -26,7 +26,7 @@ $(function () {
         //1.自适应调整底图
         initBaseMap();
         //自适应调整控件的left top
-        // redrawWidget();
+        redrawWidget();
         //自适应调整控件的宽高
         // console.log(document.documentElement.clientWidth, screen.width, screen.availWidth, window.innerWidth)
         // console.log('resize', e)
@@ -40,8 +40,6 @@ $(function () {
         img.src = "./source/bg.png";
         cvs = document.getElementById("basemap");
         jqBaseMap = $('#basemap');
-        console.log('pw', parent.document.documentElement.clientWidth, document.documentElement.clientWidth)
-        console.log('ph', parent.document.documentElement.clientHeight, document.documentElement.clientHeight)
         if (parent.document.documentElement.clientWidth !== document.documentElement.clientWidth) {
             cvs.width = parent.document.documentElement.clientWidth;
             cvs.height = parent.document.documentElement.clientHeight;
@@ -57,7 +55,7 @@ $(function () {
             context.fillStyle = context.createPattern(img, 'no-repeat')
             context.drawImage(img, 0, 0, document.documentElement.clientWidth * ratio, document.documentElement.clientHeight * ratio)
             if (!curWidgetPool || !curWidgetPool.length)
-                getData(-1);
+                getData(1);
         }
         jqBaseMap.on('click', e => {
             console.log('jqbm', e.offsetX, e.offsetY, e.clientX, e.clientY);
@@ -72,6 +70,18 @@ $(function () {
             $('#' + o.id).remove();
             genWidgetByType(o);
         })
+        bindEvent();
+    }
+
+    function bindEvent() {
+        $('.widget').dblclick(e => {
+            let ele = e.target || e.currentTarget;
+            let wgtId = ele.id;
+            let w = curWidgetPool.filter(o => o.id === wgtId)[0];
+            let content = w.content;
+            console.log(content);
+            return false;
+        });
     }
 
     function genWidgetByType(o) {
@@ -79,15 +89,13 @@ $(function () {
         if (dom && dom.length > 0) {
             return false;
         }
-        // console.log('gwt', screen.width, document.documentElement.clientWidth, screen.height, document.documentElement.clientHeight)
-        // if (screen.width - document.documentElement.clientWidth > 50) {
-        //     o.x = Math.round(o.x / (screen.width / document.documentElement.clientWidth));
-        // }
-        // if (screen.height - document.documentElement.clientHeight > 50) {
-        //     o.y = Math.round(o.y / (screen.height / document.documentElement.clientHeight));
-        // }
         if (o.type === 0) {
-            addWidget(o)
+            let w = 130, h = 80, c = 20;
+            w = 65, h = 40, c = 10
+            w = 80, h = 50, c = 12;
+            w = 92, h = 66, c = 14
+            addWidgetType2(o, w, h, c);
+            // addWidget(o)
         } else if (o.type === 1) {
             let p1 = 6;//顶部三条线等分距离
             let p2 = 7;//线长度
@@ -96,36 +104,24 @@ $(function () {
             let p5 = 6;//长方形1和2起始点间隔宽度
             let p6 = 3;//长方形2高度
             addAlert(o, p1, p2, p3, p4, p5, p6);
-            if (screen.width !== document.documentElement.clientWidth) {
-                // addAlert(o, p1 / 2, p2 / 2, p3 / 2, p4 / 2, p5 / 2, p6 / 2);
-                let widthRatio = (document.documentElement.clientWidth / screen.width).toFixed(2);
-                let heightRatio = (document.documentElement.clientHeight / screen.height).toFixed(2);
-                // addAlert2(o, p1, p2, p3, p4, p5, p6, widthRatio, heightRatio);
-                // addAlert(o, p1, p2, p3, p4, p5, p6);
-                // console.log('宽高', (document.documentElement.clientWidth / screen.width).toFixed(2), (document.documentElement.clientHeight / screen.height).toFixed(2));
-            }
-
         } else if (o.type === 2) {
             // genArrowHeadFromData(o);
         }
     }
 
     function getData(isLocal) {
-        // let url = 'http://localhost:2078/api';
         let url = 'http://10.5.13.112:2078/api';
         let dataType = 'json';
         if (!isLocal) {
-            url = 'http://10.5.13.112:2078/napi/GetAssemble?flag=1';
-            // url = 'http://localhost:2078/napi/GetAssemble?flag=1';
+            // url = 'http://10.5.13.112:2078/napi/GetAssemble?flag=1';
+            url = 'http://10.5.3.6:800/WebService/Jky_Interface.asmx/GetAssemble?flag=1;'
             dataType = 'TEXT';
         }
         $.ajax({
             type: 'get'
             , url: url
-            // , url: 'http://localhost:2078/napi/GetAssemble?flag=1'
             , dataType: dataType
             , success: function (res) {
-                console.log('获取数据:', res)
                 let wgd = res;
                 if (dataType === 'TEXT') {
                     //[object XMLDocument]
@@ -141,13 +137,16 @@ $(function () {
                     widget.defaultX = o.x;
                     widget.defaultY = o.y;
                     widget.type = o.type;
-                    widget.colorIdx = o.coloridx || o.colorIdx;
+                    widget.colorIdx = o.colorIdx;
+                    if (o.coloridx !== undefined) {
+                        widget.colorIdx = o.coloridx;
+                    }
                     widget.content = o.content;
                     curWidgetPool.push(widget);
-                    genWidgetByType(o);
-                    // console.log(o.id, o.x, o.y, o.content, o.colorIdx)
+                    genWidgetByType(widget);
                 })
                 console.log('组件数组:', curWidgetPool)
+                bindEvent();
             }
         });
     }
@@ -157,40 +156,10 @@ $(function () {
     })
 
     $('.moveWidgetBtn').on('click', e => {
-        //1。可以移动线
         isDragging = true;
-
-        // $('.dlc').on('mouseover', e => {
-        //     let ele = e.target || e.currentTarget;
-        //     let wgtId = ele.id;
-        //     $('#' + wgtId).addClass('lineBorder');
-        // });
-        // $('.dlc').on('mouseout', e => {
-        //     let ele = e.target || e.currentTarget;
-        //     let wgtId = ele.id;
-        //     $('#' + wgtId).removeClass('lineBorder');
-        // });
-        // $('.dlc').draggable({
-        //     draggable: false,
-        //     containment: ".bgContainer",
-        //     stop: function (e, ui) {
-        //         let ele = e.target || e.currentTarget;
-        //         let wgtId = ele.id;
-        //         curWidgetPool.forEach(o => {
-        //             if (o.id === wgtId) {
-        //                 o.x = ui.position.left;
-        //                 o.y = ui.position.top;
-        //             }
-        //         });
-        //         // console.log('.dlc', curWidgetPool);
-        //     }
-        // });
-
-        //2。线的div非常大，需要缩小，根据最大x和最大y，减去left和top来作为width和height
 
         let chosenWgt = $('.widget');
 
-        //把widget放到顶层,
         chosenWgt.removeClass('toTheBottom');
         chosenWgt.addClass('toTheTop');
 
@@ -211,18 +180,40 @@ $(function () {
             drag: function (e, ui) {
                 let ele = e.target || e.currentTarget;
                 let wgtId = ele.id;
-                // console.log(wgtId + ' 拖动中', cvs.width, cvs.height, ui.offset.left, ui.offset.top)
-                if (ui.offset.top < 0 || ui.offset.left < 0 || ui.offset.top > cvs.height || ui.offset.left > cvs.width) {
+                let wo = $('#' + wgtId);
+
+                if (ui.offset.top < 0) {
+                    // console.log('顶部距离超出');
+                    return false;
+                }
+                if (ui.offset.left < 0) {
+                    // console.log('左侧距离超出');
+                    return false;
+                }
+                if ((ui.offset.left + parseInt(wo.attr('width')) / ratio >= document.documentElement.clientWidth)) {
+                    // console.log(wgtId + ' 拖动中w', ui.offset.left, wo.attr('width'), document.documentElement.clientWidth, '右侧距离超出');
+                    return false;
+                }
+                if ((ui.offset.top + parseInt(wo.attr('height')) / ratio >= document.documentElement.clientHeight)) {
+                    // console.log(wgtId + ' 拖动中h', ui.offset.top, wo.attr('height'), document.documentElement.clientHeight, '底部距离超出');
                     return false;
                 }
             },
             stop: function (e, ui) {
                 let ele = e.target || e.currentTarget;
                 let wgtId = ele.id;
+                let ow = $('#' + wgtId);
                 curWidgetPool.forEach(o => {
                     if (o.id === wgtId) {
-                        o.x = ui.position.left;
-                        o.y = ui.position.top;
+                        // console.log('(' + ui.position.left + '/' + document.documentElement.clientWidth + ')*100', '(' + ui.position.top + '/' + document.documentElement.clientHeight + ')*100');
+                        let leftPercent = ((ui.position.left / document.documentElement.clientWidth)).toFixed(4) * 10000;
+                        let topPercent = ((ui.position.top / document.documentElement.clientHeight)).toFixed(4) * 10000;
+                        o.x = leftPercent;
+                        o.y = topPercent;
+                        //解法
+                        // console.log(Math.round(document.documentElement.clientWidth * (leftPercent / 10000)), Math.round(document.documentElement.clientHeight * (topPercent / 10000)))
+                        // console.log('[' + leftPercent + ',' + topPercent + '] , ' + '[' + ui.position.left + ' , ' + ui.position.top + ']')
+                        // console.log('拖动结束', ui.position.left, ui.position.top, document.documentElement.clientWidth, document.documentElement.clientHeight)
                     }
                 });
                 // console.log('拖动结束pool', curWidgetPool);
@@ -266,7 +257,12 @@ $(function () {
                     if (deletedElement) {
                         curWidgetPool.push(deletedElement)
                         if (deletedElement.type === 0) {
-                            addWidget(deletedElement);
+                            let w = 130, h = 80, c = 20;
+                            w = 65, h = 40, c = 10
+                            w = 80, h = 50, c = 12;
+                            w = 92, h = 66, c = 14
+                            addWidgetType2(deletedElement, w, h, c);
+                            //addWidget(deletedElement);
                         } else {
                             let p1 = 6;//顶部三条线等分距离
                             let p2 = 7;//线长度
@@ -282,7 +278,8 @@ $(function () {
             });
             // console.log(JSON.stringify(curWidgetPool))
 
-            console.log(wgtId, '点击位置:', e.offsetX, e.offsetY);
+            console.log('当前点击' + wgtId, curWidgetPool.filter(cwp => cwp.id === wgtId)[0]);
+            // console.log(wgtId, '点击位置:', e.offsetX, e.offsetY);
             e.stopPropagation();
             return false;
         });
@@ -537,82 +534,13 @@ function getPixelRatio(context) {
     return (window.devicePixelRatio || 1) / backingStore;
 };
 
-function addAlert2(widget, p1, p2, p3, p4, p5, p6, widthRatio, heightRatio) {
-    let id = widget.id;
-    let content = widget.content;
-    let colorIdx = widget.colorIdx;
-    let top = widget.y;
-    let left = widget.x;
-    $(".widgetPool").append('<canvas id="' + id + '"class="widget alarm"></canvas>');
-    // $($('.widget')[$('.widget').length - 1]).css('position', 'absolute');
-    // let canvas = document.getElementsByClassName("widget")[$(".widget").length - 1];
-    let canvas = document.getElementById(id);
-    canvas.width = Math.round((2 * (p1 + p3)) * widthRatio);
-    canvas.height = Math.round((2 * (p1 + p3) + p5 + p6) * heightRatio);
-
-    let cxt = canvas.getContext("2d");
-
-    switch (colorIdx) {
-        case 1:
-            cxt.strokeStyle = "rgb(255,0,0)";
-            cxt.fillStyle = "rgb(255,0,0)";
-            break;
-        case 2:
-            cxt.strokeStyle = "rgb(0,255,0)";
-            cxt.fillStyle = "rgb(0,255,0)";
-            break;
-        case 3:
-            cxt.strokeStyle = "rgb(255,255,0)";
-            cxt.fillStyle = "rgb(255,255,0)";
-            break;
-        case 4:
-            cxt.strokeStyle = "rgb(119,119,119)";
-            cxt.fillStyle = "rgb(119,119,119)";
-            break;
-    }
-
-    cxt.beginPath();
-    cxt.moveTo(0, 0);
-    cxt.lineTo(Math.round(p1 * widthRatio), Math.round(p2 * heightRatio));
-    cxt.closePath()
-    cxt.stroke();
-
-    cxt.beginPath();
-    cxt.moveTo(Math.round((p1 + p3) * widthRatio), 0);
-    cxt.lineTo(Math.round((p1 + p3) * widthRatio), Math.round(p2 * heightRatio));
-    cxt.closePath()
-    cxt.stroke();
-
-    cxt.beginPath();
-    cxt.moveTo(Math.round((2 * (p1 + p3)) * widthRatio), 0);
-    cxt.lineTo(Math.round((2 * (p1 + p3) - p1) * widthRatio), Math.round(p2 * heightRatio));
-    cxt.closePath()
-    cxt.stroke();
-
-    cxt.beginPath();
-    cxt.arc(Math.round((p1 + p3, 2 * (p1 + p3) - p1) * widthRatio), Math.round((p1 + p3) * heightRatio), 0, Math.PI, true);
-    cxt.fill();
-
-    cxt.fillRect(0, Math.round((2 * (p1 + p3) - p1) * heightRatio), Math.round(), Math.round(p4 * heightRatio));
-
-    cxt.fillRect(0, Math.round((2 * (p1 + p3) + p5) * heightRatio), Math.round((2 * (p1 + p3)) * widthRatio), Math.round(p6 * heightRatio));
-
-    let wgt = $('#' + id);
-    wgt.css('position', 'absolute');
-    wgt.css('top', top);
-    wgt.css('left', left);
-}
-
-
 function addAlert(widget, p1, p2, p3, p4, p5, p6) {
     let id = widget.id;
     let content = widget.content;
     let colorIdx = widget.colorIdx;
-    let top = widget.y;
-    let left = widget.x;
+    let top = Math.round(document.documentElement.clientHeight * (widget.y / 10000));
+    let left = Math.round(document.documentElement.clientWidth * (widget.x / 10000));
     $(".widgetPool").append('<canvas id="' + id + '"class="widget alarm"></canvas>');
-    // $($('.widget')[$('.widget').length - 1]).css('position', 'absolute');
-    // let canvas = document.getElementsByClassName("widget")[$(".widget").length - 1];
     let canvas = document.getElementById(id);
     canvas.width = 2 * (p1 + p3)
     canvas.height = 2 * (p1 + p3) + p5 + p6;
@@ -674,8 +602,8 @@ function addWidget(widget) {
     let id = widget.id;
     let content = widget.content;
     let colorIdx = widget.colorIdx;
-    let top = widget.y;
-    let left = widget.x;
+    let top = Math.round(document.documentElement.clientHeight * (widget.y / 10000));
+    let left = Math.round(document.documentElement.clientWidth * (widget.x / 10000));
     $(".widgetPool").append('<canvas id= "' + id + '"class="widget mark"></canvas>');
     let canvas = document.getElementById(id);
     canvas.width = 130;
@@ -697,6 +625,7 @@ function addWidget(widget) {
     cxt.lineTo(5, 33);
     cxt.lineTo(0, 31);
 
+
     let grd = cxt.createLinearGradient(60, 105, 60, 0);
 
     switch (colorIdx) {
@@ -714,6 +643,7 @@ function addWidget(widget) {
             break;
     }
 
+
     cxt.strokeStyle = '#fff';
     cxt.fillStyle = grd;
     cxt.fill();
@@ -721,6 +651,7 @@ function addWidget(widget) {
     cxt.textAlign = "center";
     cxt.font = "16px bold 黑体";
     cxt.textBaseline = "middle";
+
 
     if (content) {
         if (content.indexOf('|') >= 0) {
@@ -735,6 +666,101 @@ function addWidget(widget) {
 
     cxt.closePath();
     cxt.stroke();
+
+    let wgt = $('#' + id);
+    wgt.css('position', 'absolute');
+    wgt.css('top', top);
+    wgt.css('left', left);
+}
+
+function addWidgetType2(widget, w, h, c) {
+    let id = widget.id;
+    let content = widget.content;
+    let colorIdx = widget.colorIdx;
+    let top = Math.round(document.documentElement.clientHeight * (widget.y / 10000));
+    let left = Math.round(document.documentElement.clientWidth * (widget.x / 10000));
+    $(".widgetPool").append('<canvas id= "' + id + '"class="widget mark"></canvas>');
+    let canvas = document.getElementById(id);
+    canvas.width = w;
+    canvas.height = h;
+
+    let cxt = canvas.getContext("2d");
+
+
+    cxt.strokeStyle = '#fff';
+
+    let grd = cxt.createLinearGradient(60, 105, 60, 0);
+    switch (colorIdx) {
+        case 1:
+            grd.addColorStop(0, 'rgb(255,0,0,0.9)');
+            grd.addColorStop(1, 'rgb(205,59,59,0.9)');
+            break;
+        case 2:
+            grd.addColorStop(0, 'rgb(0,255,0,0.9)');
+            grd.addColorStop(1, 'rgb(163,229,136,0.9)');
+            break;
+        case 3:
+            grd.addColorStop(0, 'rgb(255,81,0,0.9)');
+            grd.addColorStop(1, 'rgba(255,136,0,0.9)');
+            break;
+    }
+    cxt.fillStyle = grd;
+    cxt.strokeRect(0, 0, w, h);
+    cxt.fillRect(0, 0, w, h);
+
+    cxt.strokeStyle = '#fff';
+    cxt.fillStyle = 'rgba(25, 25, 46,0)';
+
+
+    cxt.beginPath();
+    cxt.moveTo(0, 0.5 * c);
+    cxt.lineTo(0.5 * c, c);
+    cxt.lineTo(0.5 * c, 3 * c);
+    cxt.lineTo(0, 3.5 * c);
+    cxt.fill();
+    cxt.closePath();
+    cxt.stroke();
+
+
+    cxt.beginPath();
+    cxt.moveTo(w, 0.5 * c);
+    cxt.lineTo(w - 0.5 * c, c);
+    cxt.lineTo(w - 0.5 * c, 3 * c);
+    cxt.lineTo(w, 3.5 * c);
+    cxt.fill();
+    cxt.closePath();
+    cxt.stroke();
+
+    //补偿
+    cxt.clearRect(0, h - 0.5 * c, w + 1, 0.5 * c + 1);
+    cxt.strokeRect(-1, 0, w + 10, h - 0.5 * c + 10);
+
+
+    //清除杂线
+    // ctx2.fillStyle = 'rgb(25, 25, 46)';
+    // ctx2.strokeStyle= 'rgb(25, 25, 46)';
+    // ctx2.beginPath();
+    // ctx2.moveTo(0, 0.5 * c);
+    // ctx2.lineTo(0, 3.5 * c);
+    // ctx2.fill();
+    // ctx2.closePath();
+    // ctx2.stroke();
+
+    cxt.fillStyle = "#ff0";
+    cxt.textAlign = "center";
+    cxt.font = "12px bold 黑体";
+    cxt.textBaseline = "middle";
+
+    if (content) {
+        if (content.indexOf('|') >= 0) {
+            let text1 = content.split('|')[0];
+            let text2 = content.split('|')[1];
+            cxt.fillText(text1, w / 2, h / 2 - (h / 4));
+            cxt.fillText(text2, w / 2, h / 2 - (h / 4) + 20);
+        } else {
+            cxt.fillText(content, 60, 62);
+        }
+    }
 
     let wgt = $('#' + id);
     wgt.css('position', 'absolute');
