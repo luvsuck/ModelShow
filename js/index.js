@@ -18,7 +18,6 @@ $(function () {
     let deletedElement;
     let page;
     initBaseMap();
-
     console.log('topbar', window.outerHeight, window.innerHeight)
     console.log(document.documentElement.clientWidth, screen.width, screen.availWidth, window.innerWidth)
     console.log(document.documentElement.clientHeight, screen.height, screen.availHeight, window.innerHeight)
@@ -55,7 +54,7 @@ $(function () {
             context.fillStyle = context.createPattern(img, 'no-repeat')
             context.drawImage(img, 0, 0, document.documentElement.clientWidth * ratio, document.documentElement.clientHeight * ratio)
             if (!curWidgetPool || !curWidgetPool.length)
-                getData(1);
+                getData(0);
         }
         jqBaseMap.on('click', e => {
             console.log('jqbm', e.offsetX, e.offsetY, e.clientX, e.clientY);
@@ -74,14 +73,55 @@ $(function () {
     }
 
     function bindEvent() {
-        $('.widget').dblclick(e => {
+        let widget = $('.widget');
+        let count = 0;
+        let timeoutID = null;
+        widget.on("mousedown", function () {
+            count++;
+        });
+        widget.on("mouseup", function () {
+            count++;
+        });
+        widget.on("click", function (e) {
+            clearTimeout(timeoutID);
+            timeoutID = window.setTimeout(function (e2) {
+                count++;
+                let ele = e.target || e.currentTarget;
+                let wgtId = ele.id;
+                let w = curWidgetPool.filter(o => o.id === wgtId)[0];
+                let content = w.content;
+                page = layer.open({
+                    title: false,
+                    closeBtn:1,
+                    type: 2,
+                    anim: parseInt(Math.random() * (7), 10),
+                    area: ['893px', '600px'],
+                    // content:'../Index.html',
+                    content: "http://10.5.3.6:800/JKY_Screen/Screen/test",
+                    resize: false, fixed: false
+                });
+                // console.log(wgtId, content);
+            }, 500);
+        });
+        widget.on("dblclick", e => {
+            count++;
+            clearTimeout(timeoutID);
             let ele = e.target || e.currentTarget;
             let wgtId = ele.id;
             let w = curWidgetPool.filter(o => o.id === wgtId)[0];
-            let content = w.content;
-            console.log(content);
-            return false;
+            // console.log(wgtId, w.content);
+            if (w.id.indexOf('调速台') >= 0) {
+                initVideo('./source/video/1.mp4');
+            } else if (w.id.indexOf('转台') >= 0) {
+                initVideo('./source/video/4.mp4');
+            } else if (w.id.indexOf('试验台') >= 0) {
+                initVideo('./source/video/3.mp4');
+            } else if (w.id.indexOf('工位') >= 0) {
+                initVideo('./source/video/2.mp4');
+            }
+
         });
+
     }
 
     function genWidgetByType(o) {
@@ -766,4 +806,32 @@ function addWidgetType2(widget, w, h, c) {
     wgt.css('position', 'absolute');
     wgt.css('top', top);
     wgt.css('left', left);
+}
+
+function initVideo(src) {
+    $('#mui-player').removeClass('setHidden');
+    let mp = new MuiPlayer({
+        container: '#mui-player',
+        title: 'Title',
+        preload: true,
+        autoplay: true,
+        muted: true,
+        src: src,
+        themeColor: '#fff',
+        custom: {
+            headControls: [
+                {
+                    slot: 'closeVideo',
+                    click: function (e) {
+                        mp.destory();
+                        $('#mui-player').addClass('setHidden')
+                    },
+                    style: {}
+                }
+            ]
+        }
+    })
+    // mp.reloadUrl('./source/video/1.mp4')
+    // mp.destory();
+    // mp.close()
 }

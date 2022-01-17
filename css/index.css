@@ -54,12 +54,12 @@ html body {
 
 @font-face {
     font-family: 'iconfont';  /* Project id 3129149 */
-    src: url('//at.alicdn.com/t/font_3129149_7e1tbwl8sko.woff2?t=1641875886568') format('woff2'),
-    url('//at.alicdn.com/t/font_3129149_7e1tbwl8sko.woff?t=1641875886568') format('woff'),
-    url('//at.alicdn.com/t/font_3129149_7e1tbwl8sko.ttf?t=1641875886568') format('truetype');
+    src: url('//at.alicdn.com/t/font_3129149_rtm1d1w4kg.woff2?t=1642386738051') format('woff2'),
+    url('//at.alicdn.com/t/font_3129149_rtm1d1w4kg.woff?t=1642386738051') format('woff'),
+    url('//at.alicdn.com/t/font_3129149_rtm1d1w4kg.ttf?t=1642386738051') format('truetype');
 }
 
-.iconfont:hover:after {
+.iconfont:hover:after:not(.closeVideo) {
     content: attr(data-title);
     font-size: 15px;
     display: inline-block;
@@ -78,4 +78,21 @@ html body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     padding: 2px 10px 2px 10px;
+}
+
+.closeVideo {
+    font-size: 26px;
+}
+
+.setHidden {
+    visibility: hidden;
+}
+
+#mui-player {
+    z-index: 9999;
+    /*width: 60%;*/
+    /*height: 145%;*/
+    position: absolute;
+    left: 25%;
+    top: 25%;
 }
