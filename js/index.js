@@ -17,26 +17,27 @@ $(function () {
     let isDragging = false;
     let deletedElement;
     let page;
-    initBaseMap();
+    let timer = null;
+    let currentImgUrl = "./source/1_1_11.png";
+    initBaseMap(currentImgUrl);
     console.log('topbar', window.outerHeight, window.innerHeight)
     console.log(document.documentElement.clientWidth, screen.width, screen.availWidth, window.innerWidth)
     console.log(document.documentElement.clientHeight, screen.height, screen.availHeight, window.innerHeight)
     $(window).resize(function (e) {
         //1.自适应调整底图
-        initBaseMap();
+        initBaseMap(currentImgUrl);
         //自适应调整控件的left top
         redrawWidget();
         //自适应调整控件的宽高
         // console.log(document.documentElement.clientWidth, screen.width, screen.availWidth, window.innerWidth)
         // console.log('resize', e)
-
     });
 
     initBtnStyle();
 
-    function initBaseMap() {
+    function initBaseMap(imgSrc) {
         img = new Image();
-        img.src = "./source/bg.png";
+        img.src = imgSrc;
         cvs = document.getElementById("basemap");
         jqBaseMap = $('#basemap');
         if (parent.document.documentElement.clientWidth !== document.documentElement.clientWidth) {
@@ -53,8 +54,10 @@ $(function () {
             // console.log(img.width, img.height, document.documentElement.clientWidth, document.documentElement.clientHeight);
             context.fillStyle = context.createPattern(img, 'no-repeat')
             context.drawImage(img, 0, 0, document.documentElement.clientWidth * ratio, document.documentElement.clientHeight * ratio)
-            if (!curWidgetPool || !curWidgetPool.length)
-                getData(0);
+            if (!curWidgetPool || !curWidgetPool.length) {
+                getData(0, 1);
+                setTimerTask();
+            }
         }
         jqBaseMap.on('click', e => {
             console.log('jqbm', e.offsetX, e.offsetY, e.clientX, e.clientY);
@@ -62,8 +65,45 @@ $(function () {
         // cvs.onclick = (e) => {};
     }
 
+    $('.hideTopChain').on('click', e => {
+        if (!currentImgUrl)
+            return;
+        if (currentImgUrl.indexOf("1_1_11") >= 0) {
+            $('.hideTopChain').html('&#xe622;')
+            currentImgUrl = "./source/2_2_22.png";
+        } else {
+            $('.hideTopChain').html('&#xe641;')
+            currentImgUrl = "./source/1_1_11.png";
+        }
+        initBaseMap(currentImgUrl);
+        return false;
+    });
+
+    $('.clearInterval').on('click', e => {
+        setTimerTask();
+    });
+
+    function setTimerTask() {
+        if (!timer) {
+            timer = window.setInterval(function () {
+                redrawWidget();
+            }, 5000);
+        } else {
+            window.clearInterval(timer)
+            timer = null;
+        }
+
+
+    }
+
+    $('.updateInfoBtn').on('click', e => {
+        redrawWidget();
+        return false;
+    })
+
     function redrawWidget() {
         //获取到控件
+        getData(0, 1);
         // let alarms = curWidgetPool.filter(o => o.type === 1 && (o.id).indexOf("转台") >= 0);
         curWidgetPool.forEach(o => {
             $('#' + o.id).remove();
@@ -92,7 +132,7 @@ $(function () {
                 let content = w.content;
                 page = layer.open({
                     title: false,
-                    closeBtn:1,
+                    closeBtn: 1,
                     type: 2,
                     anim: parseInt(Math.random() * (7), 10),
                     area: ['893px', '600px'],
@@ -149,14 +189,17 @@ $(function () {
         }
     }
 
-    function getData(isLocal) {
+    function getData(isLocal, remoteFlag) {
         let url = 'http://10.5.13.112:2078/api';
         let dataType = 'json';
         if (!isLocal) {
-            // url = 'http://10.5.13.112:2078/napi/GetAssemble?flag=1';
             url = 'http://10.5.3.6:800/WebService/Jky_Interface.asmx/GetAssemble?flag=1;'
+            if (!remoteFlag) {
+                url = 'http://localhost:2078/napi/GetAssemble?flag=1';
+            }
             dataType = 'TEXT';
         }
+
         $.ajax({
             type: 'get'
             , url: url
@@ -168,6 +211,7 @@ $(function () {
                     let reg = /\[(.+?)\]/g;
                     wgd = JSON.parse(res.match(reg)[0]);
                 }
+                curWidgetPool = [];
                 wgd.forEach(o => {
                     let widget = {};
                     widget.tid = o.tid;
@@ -429,6 +473,7 @@ $(function () {
         let nCxt = nCvs.getContext("2d");
         let colorIdx = widget.colorIdx;
         switch (colorIdx) {
+            //红1 绿2 蓝3 黄4 灰5
             case 1:
                 nCxt.strokeStyle = '#f00';
                 break;
@@ -436,8 +481,15 @@ $(function () {
                 nCxt.strokeStyle = '#0f0';
                 break;
             case 3:
+                nCxt.strokeStyle = 'rgb(16, 131, 218)';
+                break;
+            case 4:
                 nCxt.strokeStyle = '#ff0';
                 break;
+            case 5:
+                nCxt.strokeStyle = 'rgb(119,119,119)';
+                break;
+
         }
         nCxt.lineWidth = 2;
         nCxt.lineCap = 'round';
@@ -597,10 +649,14 @@ function addAlert(widget, p1, p2, p3, p4, p5, p6) {
             cxt.fillStyle = "rgb(0,255,0)";
             break;
         case 3:
+            cxt.strokeStyle = "rgb(16, 131, 218)";
+            cxt.fillStyle = "rgb(122,177,217)";
+            break;
+        case 4:
             cxt.strokeStyle = "rgb(255,255,0)";
             cxt.fillStyle = "rgb(255,255,0)";
             break;
-        case 4:
+        case 5:
             cxt.strokeStyle = "rgb(119,119,119)";
             cxt.fillStyle = "rgb(119,119,119)";
             break;
@@ -669,8 +725,9 @@ function addWidget(widget) {
     let grd = cxt.createLinearGradient(60, 105, 60, 0);
 
     switch (colorIdx) {
+        //红1 绿2 蓝3 黄4 灰5
         case 1:
-            grd.addColorStop(0, 'rgb(255,0,0,0.9)');
+            grd.addColorStop(0, '#f00');
             grd.addColorStop(1, 'rgb(205,59,59,0.9)');
             break;
         case 2:
@@ -678,8 +735,16 @@ function addWidget(widget) {
             grd.addColorStop(1, 'rgb(163,229,136,0.9)');
             break;
         case 3:
+            grd.addColorStop(0, 'rgb(16, 131, 218)');
+            grd.addColorStop(1, 'rgb(122,177,217)');
+            break;
+        case 4:
             grd.addColorStop(0, 'rgb(255,81,0,0.9)');
             grd.addColorStop(1, 'rgba(255,136,0,0.9)');
+            break;
+        case 5:
+            grd.addColorStop(0, 'rgb(119,119,119)');
+            grd.addColorStop(1, 'rgb(86,85,85)');
             break;
     }
 
@@ -726,13 +791,13 @@ function addWidgetType2(widget, w, h, c) {
 
     let cxt = canvas.getContext("2d");
 
-
     cxt.strokeStyle = '#fff';
 
     let grd = cxt.createLinearGradient(60, 105, 60, 0);
     switch (colorIdx) {
+        //红1 绿2 蓝3 黄4 灰5
         case 1:
-            grd.addColorStop(0, 'rgb(255,0,0,0.9)');
+            grd.addColorStop(0, '#f00');
             grd.addColorStop(1, 'rgb(205,59,59,0.9)');
             break;
         case 2:
@@ -740,8 +805,16 @@ function addWidgetType2(widget, w, h, c) {
             grd.addColorStop(1, 'rgb(163,229,136,0.9)');
             break;
         case 3:
+            grd.addColorStop(0, 'rgb(16, 131, 218)');
+            grd.addColorStop(1, 'rgb(122,177,217)');
+            break;
+        case 4:
             grd.addColorStop(0, 'rgb(255,81,0,0.9)');
             grd.addColorStop(1, 'rgba(255,136,0,0.9)');
+            break;
+        case 5:
+            grd.addColorStop(0, 'rgb(119,119,119)');
+            grd.addColorStop(1, 'rgb(86,85,85)');
             break;
     }
     cxt.fillStyle = grd;
@@ -792,13 +865,25 @@ function addWidgetType2(widget, w, h, c) {
     cxt.textBaseline = "middle";
 
     if (content) {
-        if (content.indexOf('|') >= 0) {
-            let text1 = content.split('|')[0];
-            let text2 = content.split('|')[1];
-            cxt.fillText(text1, w / 2, h / 2 - (h / 4));
-            cxt.fillText(text2, w / 2, h / 2 - (h / 4) + 20);
+        if (content.indexOf('\\n') >= 0) {
+            let splitStr = content.split('\\n');
+            if (splitStr.length === 3) {
+                let text1 = content.split('\\n')[0];
+                let text2 = content.split('\\n')[1];
+                let text3 = content.split('\\n')[2];
+                console.log(text1, text2)
+                cxt.fillText(text1, w / 2, h * (1 / 4) - 5);
+                cxt.fillText(text2, w / 2, h / 2 - 5);
+                cxt.fillText(text3, w / 2, h * (3 / 4) - 5);
+            } else if (splitStr.length === 2) {
+                let text1 = content.split('\\n')[0];
+                let text2 = content.split('\\n')[1];
+                cxt.fillText(text1, w / 2, h / 2 - (h / 4));
+                cxt.fillText(text2, w / 2, h / 2 - (h / 4) + 20);
+            }
+
         } else {
-            cxt.fillText(content, 60, 62);
+            cxt.fillText(content, w / 2, h / 2 - 5);
         }
     }
 
